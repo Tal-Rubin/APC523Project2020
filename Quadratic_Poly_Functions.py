@@ -27,6 +27,8 @@ def N(xi,eta):
     return np.array([N1(xi,eta),N2(xi,eta),N3(xi,eta),N4(xi,eta),N5(xi,eta),N6(xi,eta),N7(xi,eta),N8(xi,eta),N9(xi,eta)])
 
 
+
 def B(xi,eta):
-    return np.array([[N1.dx()(xi,eta),N2.dx()(xi,eta),N3.dx()(xi,eta),N4.dx()(xi,eta),N5.dx()(xi,eta),N6.dx()(xi,eta),N7.dx()(xi,eta),N8.dx()(xi,eta),N9.dx()(xi,eta)],[N1.dy()(xi,eta),N2.dy()(xi,eta),N3.dy()(xi,eta),N4.dy()(xi,eta),N5.dy()(xi,eta),N6.dy()(xi,eta),N7.dy()(xi,eta),N8.dy()(xi,eta),N9.dy()(xi,eta)]])
+    return np.array([[N1.dx()(xi,eta),N2.dx()(xi,eta),N3.dx()(xi,eta),N4.dx()(xi,eta),N5.dx()(xi,eta),N6.dx()(xi,eta),N7.dx()(xi,eta),N8.dx()(xi,eta),N9.dx()(xi,eta)],
+                     [N1.dy()(xi,eta),N2.dy()(xi,eta),N3.dy()(xi,eta),N4.dy()(xi,eta),N5.dy()(xi,eta),N6.dy()(xi,eta),N7.dy()(xi,eta),N8.dy()(xi,eta),N9.dy()(xi,eta)]])
 

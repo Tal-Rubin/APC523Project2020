@@ -13,14 +13,13 @@ import Quadratic_Poly_Functions as QBF
 import polynomial2d as p2d
 
 
-def plotting():
+def plotting(XY):
     xp=np.linspace(-1,1)
     yp=np.linspace(-1,1)
     
     Xp, Yp = np.meshgrid(xp, yp)
-    
+
 # =============================================================================
-#     fig = plt.figure(1)
 #     ax = plt.axes(projection='3d')
 #     
 #     ax.plot_surface(Xp,Yp,QBF.N9(Xp, Yp))
@@ -68,13 +67,13 @@ def plotting():
     Jgrid=np.zeros((len(xp),len(xp)))
     for i in range(len(Xp)):
         for j in range(len(Yp)):
-            Jgrid[i,j]=J(Xp[i,j], Yp[i,j])
+            Jgrid[i,j]=detJ(Xp[i,j], Yp[i,j],XY)
     
     
     
     
     
-    fig = plt.figure(4)
+    plt.figure(4)
     ax = plt.axes(projection='3d')
     ax.plot_surface(Xp,Yp,Jgrid)
     ax.plot_surface(Xp,Yp,np.zeros((len(xp),len(xp))))
@@ -98,7 +97,7 @@ def NodeArrange(N_row,N_col,XY,NodeBeginNum,ElemBeginNum):
             LM[j+i*N_row,11]  =   2*j+i*(2+4*N_row)      +NodeBeginNum       #Node 4, #  j+i*N_row+i
             LM[j+i*N_row,12]  =   -1  +  (i+0.5)*2/N_col        #Node 5, xi
             LM[j+i*N_row,13]  =   LM[j+i*N_row,1]               #Node 5, eta
-            LM[j+i*N_row,14]  =   LM[j+i*N_row,11]+3+2*N_row  +NodeBeginNum  #Node 5, #
+            LM[j+i*N_row,14]  =   LM[j+i*N_row,11]+3+2*N_row  +NodeBeginNum  #Node 5, #   
             LM[j+i*N_row,15]  =   LM[j+i*N_row,3]               #Node 6, xi
             LM[j+i*N_row,16]  =   1  -  (j+0.5)*2/N_row         #Node 6, eta
             LM[j+i*N_row,17]  =   LM[j+i*N_row,8]+1 +NodeBeginNum            #Node 6, #
@@ -150,18 +149,18 @@ def Nodes(GM):
     return x,y    
 
 #PreProcessor
-XDom=4
+XDom=2
 YDom=1
 
-X=XDom*np.array([0, 1, 1, 0, 0.5 , 1   ,0.5 ,0   ,0.5])
-Y=YDom*np.array([0, 0, 1, 1, 0   , 0.5 ,1   ,0.5 ,0.5])
+X=XDom*np.array([0, 1, 1, 0, 0.5 , 1   ,0.5 ,0   ,0.5],dtype=np.float64)
+Y=YDom*np.array([0, 0, 1, 1, 0   , 0.5 ,1   ,0.5 ,0.5],dtype=np.float64)
 
 
 r1=1
 r2=2
 r3=3
-X=np.array([r1*np.cos(0.75*np.pi), r1*np.cos(0.25*np.pi), r3*np.cos(0.25*np.pi), r3*np.cos(0.75*np.pi), r1*np.cos(0.5*np.pi) , r2*np.cos(0.25*np.pi)   ,r3*np.cos(0.5*np.pi) ,r2*np.cos(0.75*np.pi)   ,r2*np.cos(0.5*np.pi)])
-Y=np.array([r1*np.sin(0.75*np.pi), r1*np.sin(0.25*np.pi), r3*np.sin(0.25*np.pi), r3*np.sin(0.75*np.pi), r1*np.sin(0.5*np.pi) , r2*np.sin(0.25*np.pi)   ,r3*np.sin(0.5*np.pi) ,r2*np.sin(0.75*np.pi)   ,r2*np.sin(0.5*np.pi)])
+X=np.array([r1*np.cos(0.75*np.pi), r1*np.cos(0.25*np.pi), r3*np.cos(0.25*np.pi), r3*np.cos(0.75*np.pi), r1*np.cos(0.5*np.pi) , r2*np.cos(0.25*np.pi)   ,r3*np.cos(0.5*np.pi) ,r2*np.cos(0.75*np.pi)   ,r2*np.cos(0.5*np.pi)],dtype=np.float64)
+Y=np.array([r1*np.sin(0.75*np.pi), r1*np.sin(0.25*np.pi), r3*np.sin(0.25*np.pi), r3*np.sin(0.75*np.pi), r1*np.sin(0.5*np.pi) , r2*np.sin(0.25*np.pi)   ,r3*np.sin(0.5*np.pi) ,r2*np.sin(0.75*np.pi)   ,r2*np.sin(0.5*np.pi)],dtype=np.float64)
 
 
 XY=np.array([X,Y]).T
@@ -171,18 +170,17 @@ ElemBeginNum=0
 NodeBeginNum=0
 
 
-N_row=60
-N_col=80
+N_row=30
+N_col=30
 
 f=0
 phi_0=0
+    
 
-
-
-def J(xi,eta):
+def detJ(xi,eta,XY):
     return np.linalg.det(QBF.B(xi, eta)@XY)
 
-if J(-0.5,0.5)<0 or J(0.5,-0.5)<0 or J(-0.5,-0.5)<0 or J(0.5,0.5)<0:
+if detJ(-0.5,0.5,XY)<0 or detJ(0.5,-0.5,XY)<0 or detJ(-0.5,-0.5,XY)<0 or detJ(0.5,0.5,XY)<0:
     print("Bad Macro Element Coordinates")
 
 LM1=NodeArrange(N_row,N_col,XY,NodeBeginNum,ElemBeginNum)
@@ -249,37 +247,30 @@ for k in range(GM.shape[0]):
  
 b=np.ones(xNodes.shape)*1e-10
 
-BCnodes=np.array([*np.arange(0,2*N_row+2),
-                  *np.arange((N_col-1)*(2+4*N_row),(N_col-1)*(2+4*N_row)+2*N_row+2),
-                  *np.arange((2+4*N_row),N_col*(2+4*N_row),(2+4*N_row)),
-                  *(1+2*N_row+np.arange((2+4*N_row),N_col*(2+4*N_row),(2+4*N_row))),
-                  *np.arange(2*(N_row-1)+2,2*(N_row-1)+(N_col-1)*(2+4*N_row)+2,(2+4*N_row)),
-                  *np.arange(3+2*N_row+2*(N_row-1)+2,3+2*N_row+2*(N_row-1)+(N_col-1)*(2+4*N_row)+2,(2+4*N_row))])
+BCnodes=np.array([*np.arange(0,2*N_row+1), 
+                  *np.arange(1+2*N_row,1+2*N_row+(N_col)*(2+4*N_row),(2+4*N_row)),
+                  *np.arange(2+4*N_row,2+4*N_row+(N_col)*(2+4*N_row),(2+4*N_row)),
+                  *np.arange(2*(N_row-1)+3+2*N_row,2*(N_row-1)+(N_col)*(2+4*N_row)+3+2*N_row,(2+4*N_row)),
+                  *np.arange(2*(N_row-1)+4+4*N_row,2*(N_row-1)+(N_col)*(2+4*N_row)+4+4*N_row,(2+4*N_row)),
+                  *np.arange((N_col)*(2+4*N_row)-1,2*N_row+(N_col)*(2+4*N_row))
+                  ])
 
 
+
+plt.figure(3)
 for i in BCnodes:
     GlobalStiffMat[i,:]=np.zeros((1,GlobalStiffMat.shape[1]))
     GlobalStiffMat[i,i]=1
     b[i]=0
-
+    plt.plot(xNodes[i],yNodes[i],'*')
 Sol=np.linalg.solve(GlobalStiffMat,b)
 
 
-# =============================================================================
-# plt.figure(2)
-# #ax = plt.axes(projection='3d')
-# #ax.plot_trisurf(xNodes,yNodes,x,
-#           #      cmap='viridis')
-# 
-# import pandas as pd
-# import seaborn as sns
-# 
-# 
-# data = pd.DataFrame(data={'x':xNodes, 'y':yNodes, 'z':Sol})
-# data = data.pivot(index='x', columns='y', values='z')
-# sns.heatmap(data)
-# plt.show()
-# =============================================================================
+plt.figure(2)
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(xNodes,yNodes,Sol,
+                cmap='viridis')
+
 
 # =============================================================================
 # GlobalStiffMatInv=np.linalg.inv(GlobalStiffMat)

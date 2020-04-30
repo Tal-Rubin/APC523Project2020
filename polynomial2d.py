@@ -12,11 +12,11 @@ class poly:
         """
         if isinstance(coefficients, list):
             if all(isinstance(i, list) for i in coefficients):
-                self.coefficients = np.array(coefficients) 
+                self.coefficients = np.array(coefficients,dtype=np.float64) 
             else:
-                self.coefficients = np.array([coefficients])
-        elif isinstance(coefficients, int) or isinstance(coefficients, float):
-            self.coefficients = np.array([[coefficients]])
+                self.coefficients = np.array([coefficients],dtype=np.float64)
+        elif isinstance(coefficients, int) or isinstance(coefficients, float) or isinstance(coefficients, np.float) or isinstance(coefficients, np.float64):
+            self.coefficients = np.array([[coefficients]],dtype=np.float64)
         elif isinstance(coefficients,np.ndarray):
             self.coefficients = coefficients
         
@@ -158,20 +158,36 @@ class poly:
 
         return res
     def __call__(self, x=None,y=None):    
-        if x!=None and y!=None:
-            res = 0
-            for i,coeff in np.ndenumerate(self.coefficients):
-                res += coeff*x**i[1]*y**i[0]
-        if x!=None and y==None:
-            res=np.zeros((self.degreey(),1))
-            for i,coeff in np.ndenumerate(self.coefficients):
-                res[i[0],0] += coeff*x**i[1]
-            res=poly(res)
-        if x==None and y!=None:
-            res=np.zeros((1,self.degreex()))
-            for i,coeff in np.ndenumerate(self.coefficients):
-                res[0,i[1]] += coeff*y**i[0]
-            res=poly(res)
+        if isinstance(x,np.ndarray) and isinstance(y,np.ndarray):
+            if x.any()!=None and y.any()!=None:
+                res = 0
+                for i,coeff in np.ndenumerate(self.coefficients):
+                    res += coeff*x**i[1]*y**i[0]
+            if x.any()!=None and y.any()==None:
+                res=np.zeros((self.degreey(),1))
+                for i,coeff in np.ndenumerate(self.coefficients):
+                    res[i[0],0] += coeff*x**i[1]
+                res=poly(res)
+            if x.any()==None and y.any()!=None:
+                res=np.zeros((1,self.degreex()))
+                for i,coeff in np.ndenumerate(self.coefficients):
+                    res[0,i[1]] += coeff*y**i[0]
+                res=poly(res)
+        else:
+            if x!=None and y!=None:
+                res = 0
+                for i,coeff in np.ndenumerate(self.coefficients):
+                    res += coeff*x**i[1]*y**i[0]
+            if x!=None and y==None:
+                res=np.zeros((self.degreey(),1))
+                for i,coeff in np.ndenumerate(self.coefficients):
+                    res[i[0],0] += coeff*x**i[1]
+                res=poly(res)
+            if x==None and y!=None:
+                res=np.zeros((1,self.degreex()))
+                for i,coeff in np.ndenumerate(self.coefficients):
+                    res[0,i[1]] += coeff*y**i[0]
+                res=poly(res)
         return res
 
     def degreex(self):
@@ -186,7 +202,7 @@ class poly:
     def __add__(self,other):  
         if isinstance(other, int) or isinstance(other, float):
             other=poly(other)
-        res=np.zeros((max(self.coefficients.shape[0],other.degreey()),max(self.coefficients.shape[1],other.degreex())))
+        res=np.zeros((max(self.coefficients.shape[0],other.degreey()),max(self.coefficients.shape[1],other.degreex())),dtype=np.float64)
         for i in range(self.coefficients.shape[0]):
             for j in range(self.coefficients.shape[1]):
                 res[i,j]+=self.coefficients[i,j]
@@ -207,7 +223,7 @@ class poly:
     def __mul__(self,other):
         if isinstance(other, int) or isinstance(other, float):
             other=poly(other)
-        res=np.zeros((self.degreey()+other.degreey()-1,self.degreex()+other.degreex()-1))
+        res=np.zeros((self.degreey()+other.degreey()-1,self.degreex()+other.degreex()-1),dtype=np.float64)
         for i in range(self.degreey()):
             for j in range(self.degreex()):
                 res[i:i+other.degreey(),j:j+other.degreex()]+=self.coefficients[i,j]*other.coefficients
@@ -217,21 +233,21 @@ class poly:
         return self.__mul__(other)
     
     def dx(self):
-        res=np.zeros((self.coefficients.shape[0],self.coefficients.shape[1]-1))
+        res=np.zeros((self.coefficients.shape[0],self.coefficients.shape[1]-1),dtype=np.float64)
         for i in range(res.shape[0]):
             for j in range(res.shape[1]):
                 res[i,j]=self.coefficients[i,j+1]*(j+1)
         return poly(res)
     
     def dy(self):
-        res=np.zeros((self.coefficients.shape[0]-1,self.coefficients.shape[1]))
+        res=np.zeros((self.coefficients.shape[0]-1,self.coefficients.shape[1]),dtype=np.float64)
         for i in range(res.shape[0]):
             for j in range(res.shape[1]):
                 res[i,j]=self.coefficients[i+1,j]*(i+1)
         return poly(res)    
     
     def intx(self,ax=None,bx=None):
-        res=np.zeros((self.coefficients.shape[0],self.coefficients.shape[1]+1))
+        res=np.zeros((self.coefficients.shape[0],self.coefficients.shape[1]+1),dtype=np.float64)
         for i in range(res.shape[0]):
             for j in range(self.coefficients.shape[1]):
                 res[i,j+1]=self.coefficients[i,j]/(j+1)
@@ -245,7 +261,7 @@ class poly:
 
     
     def inty(self,ay=None,by=None):
-        res=np.zeros((self.coefficients.shape[0]+1,self.coefficients.shape[1]))
+        res=np.zeros((self.coefficients.shape[0]+1,self.coefficients.shape[1]),dtype=np.float64)
         for i in range(self.coefficients.shape[0]):
             for j in range(res.shape[1]):
                 res[i+1,j]=self.coefficients[i,j]/(i+1)
