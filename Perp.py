@@ -128,15 +128,15 @@ def NodeArrange(N_row,N_col,XY,NodeBeginNum,ElemBeginNum):
         
         
             #Moving the node to the global coordinate system
-            LM[j+i*N_row,0],LM[j+i*N_row,1]    =    QBF.N(LM[j+i*N_row,0],LM[j+i*N_row,1]).T@XY   #-1  +  i*2/N_col              #Node 1, xi
-            LM[j+i*N_row,3],LM[j+i*N_row,4]    =    QBF.N(LM[j+i*N_row,3],LM[j+i*N_row,4]).T@XY          #Node 2, xi
-            LM[j+i*N_row,6],LM[j+i*N_row,7]    =    QBF.N(LM[j+i*N_row,6],LM[j+i*N_row,7]).T@XY
-            LM[j+i*N_row,9],LM[j+i*N_row,10]   =    QBF.N(LM[j+i*N_row,9],LM[j+i*N_row,10]).T@XY
-            LM[j+i*N_row,12],LM[j+i*N_row,13]  =    QBF.N(LM[j+i*N_row,12],LM[j+i*N_row,13]).T@XY
-            LM[j+i*N_row,15],LM[j+i*N_row,16]  =    QBF.N(LM[j+i*N_row,15],LM[j+i*N_row,16]).T@XY
-            LM[j+i*N_row,18],LM[j+i*N_row,19]  =    QBF.N(LM[j+i*N_row,18],LM[j+i*N_row,19]).T@XY
-            LM[j+i*N_row,21],LM[j+i*N_row,22]  =    QBF.N(LM[j+i*N_row,21],LM[j+i*N_row,22]).T@XY
-            LM[j+i*N_row,24],LM[j+i*N_row,25]  =    QBF.N(LM[j+i*N_row,24],LM[j+i*N_row,25]).T@XY
+            LM[j+i*N_row,0],LM[j+i*N_row,1]    =    XY@QBF.N(LM[j+i*N_row,0],LM[j+i*N_row,1])  #-1  +  i*2/N_col              #Node 1, xi
+            LM[j+i*N_row,3],LM[j+i*N_row,4]    =    XY@QBF.N(LM[j+i*N_row,3],LM[j+i*N_row,4])          #Node 2, xi
+            LM[j+i*N_row,6],LM[j+i*N_row,7]    =    XY@QBF.N(LM[j+i*N_row,6],LM[j+i*N_row,7])
+            LM[j+i*N_row,9],LM[j+i*N_row,10]   =    XY@QBF.N(LM[j+i*N_row,9],LM[j+i*N_row,10])
+            LM[j+i*N_row,12],LM[j+i*N_row,13]  =    XY@QBF.N(LM[j+i*N_row,12],LM[j+i*N_row,13])
+            LM[j+i*N_row,15],LM[j+i*N_row,16]  =    XY@QBF.N(LM[j+i*N_row,15],LM[j+i*N_row,16])
+            LM[j+i*N_row,18],LM[j+i*N_row,19]  =    XY@QBF.N(LM[j+i*N_row,18],LM[j+i*N_row,19])
+            LM[j+i*N_row,21],LM[j+i*N_row,22]  =    XY@QBF.N(LM[j+i*N_row,21],LM[j+i*N_row,22])
+            LM[j+i*N_row,24],LM[j+i*N_row,25]  =    XY@QBF.N(LM[j+i*N_row,24],LM[j+i*N_row,25])
     return LM
 
 def Nodes(GM):
@@ -157,13 +157,26 @@ Y=YDom*np.array([0, 0, 1, 1, 0   , 0.5 ,1   ,0.5 ,0.5],dtype=np.float64)
 
 
 r1=1
-r2=2
+r2=1.6
 r3=3
 X=np.array([r1*np.cos(0.75*np.pi), r1*np.cos(0.25*np.pi), r3*np.cos(0.25*np.pi), r3*np.cos(0.75*np.pi), r1*np.cos(0.5*np.pi) , r2*np.cos(0.25*np.pi)   ,r3*np.cos(0.5*np.pi) ,r2*np.cos(0.75*np.pi)   ,r2*np.cos(0.5*np.pi)],dtype=np.float64)
 Y=np.array([r1*np.sin(0.75*np.pi), r1*np.sin(0.25*np.pi), r3*np.sin(0.25*np.pi), r3*np.sin(0.75*np.pi), r1*np.sin(0.5*np.pi) , r2*np.sin(0.25*np.pi)   ,r3*np.sin(0.5*np.pi) ,r2*np.sin(0.75*np.pi)   ,r2*np.sin(0.5*np.pi)],dtype=np.float64)
 
 
-XY=np.array([X,Y]).T
+
+
+r1=1
+r2=2
+r3=3
+X=np.array([r1*np.cos(0.75*np.pi), -r3*np.cos(0.75*np.pi), -r1*np.cos(0.75*np.pi), r3*np.cos(0.75*np.pi), r1*np.cos(0.5*np.pi) , r2*np.cos(0.25*np.pi)   ,r3*np.cos(0.5*np.pi) ,r2*np.cos(0.75*np.pi)   ,r2*np.cos(0.5*np.pi)],dtype=np.float64)
+Y=np.array([r1*np.sin(0.75*np.pi), r3+r1-r3*np.sin(0.25*np.pi), r3+r1-r1*np.sin(0.25*np.pi), r3*np.sin(0.75*np.pi), r1*np.sin(0.5*np.pi) , r3+r1-r2*np.sin(0.25*np.pi)   ,r3*np.sin(0.5*np.pi) ,r2*np.sin(0.75*np.pi)   ,r2*np.sin(0.5*np.pi)],dtype=np.float64)
+
+
+
+
+
+
+XY=np.array([X,Y])
 
 
 ElemBeginNum=0
@@ -178,7 +191,10 @@ phi_0=0
     
 
 def detJ(xi,eta,XY):
-    return np.linalg.det(QBF.B(xi, eta)@XY)
+    return np.linalg.det(XY@QBF.B(xi, eta))
+
+def invJ(XY):
+    return np.array([[(XY@QBF.Ba)[1,1],-(XY@QBF.Ba)[0,1]],[-(XY@QBF.Ba)[1,0],(XY@QBF.Ba)[0,0]]])
 
 if detJ(-0.5,0.5,XY)<0 or detJ(0.5,-0.5,XY)<0 or detJ(-0.5,-0.5,XY)<0 or detJ(0.5,0.5,XY)<0:
     print("Bad Macro Element Coordinates")
@@ -212,10 +228,26 @@ GlobalStiffMat=np.zeros((len(xNodes),len(yNodes)))
 #stiffness matrix of each element
 Xele=np.zeros(9)
 Yele=np.zeros(9)
+# =============================================================================
+# detelem00=np.zeros(GM.shape[0])
+# detelempp=np.zeros(GM.shape[0])
+# detelemmm=np.zeros(GM.shape[0])
+# detelempm=np.zeros(GM.shape[0])
+# detelemmp=np.zeros(GM.shape[0])
+# =============================================================================
+
 for k in range(GM.shape[0]):
     for j in range(9):
-        Xele[j]=GM[k,3*j] ###wrong??? need to fix node order within element// I think its actually good
+        Xele[j]=GM[k,3*j] 
         Yele[j]=GM[k,3*j+1]
+    XYele=np.array([Xele,Yele])
+# =============================================================================
+#     detelem00[k]=detJ(0,0,XYele)
+#     detelempp[k]=detJ(1,1,XYele)
+#     detelemmm[k]=detJ(-1,-1,XYele)
+#     detelempm[k]=detJ(1,-1,XYele)
+#     detelemmp[k]=detJ(-1,1,XYele)
+# =============================================================================
     NodeXYantySymOuter=np.outer(Xele,Yele)-np.outer(Yele,Xele)
 
     EleStiffMat=np.zeros((9,9))
@@ -279,5 +311,16 @@ ax.plot_trisurf(xNodes,yNodes,Sol,
 # 
 # =============================================================================
 
+#electric field 
+#Ex= QBF.N1.dx()/((QBF.Ba@XY)[0,0])+QBF.N1.dy()/((QBF.Ba@XY)[0,1])
+#Ey= QBF.N1.dx()/((QBF.Ba@XY)[1,0])+QBF.N1.dy()/((QBF.Ba@XY)[1,1])
 
 
+
+
+plt.figure(7)
+plt.plot(detelem00,color='r')
+plt.plot(detelempp,color='g')
+plt.plot(detelemmm,color='b')
+plt.plot(detelempm,color='y')
+plt.plot(detelemmp,color='m')

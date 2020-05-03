@@ -19,7 +19,10 @@ class poly:
             self.coefficients = np.array([[coefficients]],dtype=np.float64)
         elif isinstance(coefficients,np.ndarray):
             self.coefficients = coefficients
-        
+        for i in range(self.coefficients.shape[0]):
+            for j in range(self.coefficients.shape[1]):
+                if abs(self.coefficients[i,j])<5e-16:
+                    self.coefficients[i,j]=0
     def __repr__(self):
         """
         method to return the canonical string representation 
