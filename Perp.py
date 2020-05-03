@@ -318,9 +318,9 @@ ax.plot_trisurf(xNodes,yNodes,Sol,
 
 
 
-plt.figure(7)
-plt.plot(detelem00,color='r')
-plt.plot(detelempp,color='g')
-plt.plot(detelemmm,color='b')
-plt.plot(detelempm,color='y')
-plt.plot(detelemmp,color='m')
+#plt.figure(7)
+#plt.plot(detelem00,color='r')
+#plt.plot(detelempp,color='g')
+#plt.plot(detelemmm,color='b')
+#plt.plot(detelempm,color='y')
+#plt.plot(detelemmp,color='m')
