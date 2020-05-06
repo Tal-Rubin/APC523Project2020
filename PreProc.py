@@ -12,6 +12,12 @@ from mpl_toolkits.mplot3d import Axes3D
 import Quadratic_Poly_Functions as QBF
 import polynomial2d as p2d
 
+#use np.where for element fixing 
+#and where element # is not the same as its index in the element matrix
+#np.where(GlobalElementMatrix[:,0]==884)[0][0] 
+
+
+
 
 
 def NodeArrange(N_row,N_col,XY,NodeBeginNum,ElemBeginNum):
@@ -69,87 +75,115 @@ def CheckDetJ(XY,fineness=10):
             if detJ(Xp[i,j], Yp[i,j],XY)<0:
                 print("Bad Macro Element Coordinates")
                 return 0
+    print("Good Macro Element Coordinates")
     return 1
 
-def initMasterStiffnessMat():   
-    k_mast=np.zeros((9,9,9,9))
+
+def initMasterFluxMat():   
+    Gamma_mast=np.zeros((9,9,9,9))
     for i in range(9):
         for j in range(9):
             for n in range(9):
                 for m in range(9):
-                    temp=(QBF.Na[i].dx()*QBF.Na[j].dx()+QBF.Na[i].dy()*QBF.Na[j].dy())*(QBF.Na[n].dx()*QBF.Na[m].dy())
+                    temp=QBF.Na[j]*QBF.Na[m]*(QBF.Na[i].dx()*QBF.Na[n].dy()-QBF.Na[i].dy()*QBF.Na[n].dx())
                     temp=temp.intx(-1,1)
                     temp=temp.inty(-1,1)
-                    k_mast[i,j,n,m]=temp.scalar()
-    return k_mast
+                    Gamma_mast[i,j,n,m]=temp.scalar()
+    return Gamma_mast
 
-def assembleGlobalStiffMat(GlobalElementMatrix,NodeList):
-    k_mast=initMasterStiffnessMat()
+def initMasterForcingMatrix():   
+    f_mast=np.zeros((9,9,9,9))
+    for i in range(9):
+        for j in range(9):
+            for n in range(9):
+                for m in range(9):
+                    temp=(QBF.Na[i]*QBF.Na[j])*(QBF.Na[n].dx()*QBF.Na[m].dy())
+                    temp=temp.intx(-1,1)
+                    temp=temp.inty(-1,1)
+                    f_mast[i,j,n,m]=temp.scalar()
+    return f_mast
+
+
+
+def assembleGlobalMats(GlobalElementMatrix,NodeList,order=6):
+   # k_mast=initMasterStiffnessMat()
+    f_mast=initMasterForcingMatrix()
     GlobalStiffMat=np.zeros((NodeList.shape[1],NodeList.shape[1]))
+    GlobalForceMat=np.zeros((NodeList.shape[1],NodeList.shape[1]))
     XYele=np.zeros((2,9))
+    x_i=np.array([-0.932469514203152,-0.661209386466265,-0.238619186083197,0.238619186083197,0.661209386466265,0.932469514203152])
+    w_i=np.array([0.171324492379170,0.360761573048139,0.467913934572691,0.467913934572691,0.360761573048139,0.171324492379170])
+    if order==5:
+        x_i=np.array([-np.sqrt(5+2*np.sqrt(10/7))/3,-np.sqrt(5-2*np.sqrt(10/7))/3,0,np.sqrt(5-2*np.sqrt(10/7))/3,np.sqrt(5+2*np.sqrt(10/7))/3])
+        w_i=np.array([(322-13*np.sqrt(70))/900,(322+13*np.sqrt(70))/900,128/225,(322+13*np.sqrt(70))/900,(322-13*np.sqrt(70))/900])        
+  
     for k in range(GlobalElementMatrix.shape[0]):
         XYele = NodeList[1:3,GlobalElementMatrix[k,1:10]]      
         NodeXYantySymOuter=np.outer(XYele[0,:],XYele[1,:])-np.outer(XYele[1,:],XYele[0,:])
         EleStiffMat=np.zeros((9,9))
+        EleForceMat=np.zeros((9,9))      
+        xi_x=(XYele[1,:])@(QBF.Ba[:,1])
+        xi_y=-(XYele[0,:])@(QBF.Ba[:,1])
+        eta_x=-(XYele[1,:])@(QBF.Ba[:,0])
+        eta_y=(XYele[0,:])@(QBF.Ba[:,0])
         for i in range(9):
             for j in range(9):
+                kij=QBF.Na[i].dx()*QBF.Na[j].dx()*(xi_x*xi_x+xi_y*xi_y)+QBF.Na[i].dy()*QBF.Na[j].dy()*(eta_x*eta_x+eta_y*eta_y)+(QBF.Na[i].dx()*QBF.Na[j].dy()+QBF.Na[i].dy()*QBF.Na[j].dx())*(xi_x*eta_x+xi_y*eta_y)
+                for n in range(len(x_i)):
+                    for m in range(len(x_i)):
+                        EleStiffMat[i,j]+=w_i[n]*w_i[m]*kij(x_i[n],x_i[m])/detJ(x_i[n],x_i[m],XYele)
                 for n in range(9):
                     for m in range(9):
-                        EleStiffMat[i,j]+=k_mast[i,j,n,m]*NodeXYantySymOuter[n,m]
+                        #EleStiffMat[i,j]+=k_mast[i,j,n,m]*NodeXYantySymOuter[n,m]
+                        EleForceMat[i,j]+=f_mast[i,j,n,m]*NodeXYantySymOuter[n,m]
         for n in range(9):
             for m in range(9):
                 GlobalStiffMat[GlobalElementMatrix[k,1+n],GlobalElementMatrix[k,1+m]]+=EleStiffMat[n,m]
-    return GlobalStiffMat
+                GlobalForceMat[GlobalElementMatrix[k,1+n],GlobalElementMatrix[k,1+m]]+=EleForceMat[n,m]
+    return GlobalStiffMat,GlobalForceMat
+
+def assembleElementMats(GlobalElementMatrix,NodeList):
+    Gamma_mast=initMasterFluxMat()
+    Mass_mast=initMasterForcingMatrix()
+    EleFluxMatx=np.zeros((GlobalElementMatrix.shape[0],9,9,9))
+    EleFluxMaty=np.zeros((GlobalElementMatrix.shape[0],9,9,9))
+    EleMassMat=np.zeros((GlobalElementMatrix.shape[0],9,9))
+
+    for k in range(GlobalElementMatrix.shape[0]):
+        XYele = NodeList[1:3,GlobalElementMatrix[k,1:10]]      
+        NodeXYantySymOuter=np.outer(XYele[0,:],XYele[1,:])-np.outer(XYele[1,:],XYele[0,:])
+        for i in range(9):
+            for j in range(9):    
+                for n in range(9):
+                    for m in range(9):
+                        EleFluxMatx[k,i,j,m]+=Gamma_mast[i,j,n,m]*NodeList[2,GlobalElementMatrix[k,n+1]]
+                        EleFluxMaty[k,i,j,m]+=-Gamma_mast[i,j,n,m]*NodeList[1,GlobalElementMatrix[k,n+1]]
+                        EleMassMat[k,i,j]+=Mass_mast[i,j,n,m]*NodeXYantySymOuter[n,m]
+    return EleFluxMatx,EleFluxMaty,EleMassMat
+
+
+
+
 
     #PreProcessor
-def PreProc():
-    XDom=2
-    YDom=1
-    
-    X=XDom*np.array([0, 1, 1, 0, 0.5 , 1   ,0.5 ,0   ,0.5],dtype=np.float64)
-    Y=YDom*np.array([0, 0, 1, 1, 0   , 0.5 ,1   ,0.5 ,0.5],dtype=np.float64)
-    
-    
-    r1=1
-    r2=1.6
-    r3=3
-    X=np.array([r1*np.cos(0.75*np.pi), r1*np.cos(0.25*np.pi), r3*np.cos(0.25*np.pi), r3*np.cos(0.75*np.pi), r1*np.cos(0.5*np.pi) , r2*np.cos(0.25*np.pi)   ,r3*np.cos(0.5*np.pi) ,r2*np.cos(0.75*np.pi)   ,r2*np.cos(0.5*np.pi)],dtype=np.float64)
-    Y=np.array([r1*np.sin(0.75*np.pi), r1*np.sin(0.25*np.pi), r3*np.sin(0.25*np.pi), r3*np.sin(0.75*np.pi), r1*np.sin(0.5*np.pi) , r2*np.sin(0.25*np.pi)   ,r3*np.sin(0.5*np.pi) ,r2*np.sin(0.75*np.pi)   ,r2*np.sin(0.5*np.pi)],dtype=np.float64)
+def PreProc(XY,N_row=10,N_col=10,order=6,ElemBeginNum=0,NodeBeginNum=0):
 
-
-    # =============================================================================
-    # r1=1
-    # r2=2
-    # r3=3
-    # X=np.array([r1*np.cos(0.75*np.pi), -r3*np.cos(0.75*np.pi), -r1*np.cos(0.75*np.pi), r3*np.cos(0.75*np.pi), r1*np.cos(0.5*np.pi) , r2*np.cos(0.25*np.pi)   ,r3*np.cos(0.5*np.pi) ,r2*np.cos(0.75*np.pi)   ,r2*np.cos(0.5*np.pi)],dtype=np.float64)
-    # Y=np.array([r1*np.sin(0.75*np.pi), r3+r1-r3*np.sin(0.25*np.pi), r3+r1-r1*np.sin(0.25*np.pi), r3*np.sin(0.75*np.pi), r1*np.sin(0.5*np.pi) , r3+r1-r2*np.sin(0.25*np.pi)   ,r3*np.sin(0.5*np.pi) ,r2*np.sin(0.75*np.pi)   ,r2*np.sin(0.5*np.pi)],dtype=np.float64)
-    # =============================================================================
-
-
-    XY=np.array([X,Y])
     
-    
-    ElemBeginNum=0
-    NodeBeginNum=0
 
-
-    N_row=50
-    N_col=50
-    
-    f=0
-    phi_0=0
-    
 
 
     if CheckDetJ(XY):
         LocalMatrix1,NodeList=NodeArrange(N_row,N_col,XY,NodeBeginNum,ElemBeginNum)
         GlobalElementMatrix=np.array(LocalMatrix1)
-    
+        print('Global Element Matrix generated')
         #plot Node Locations
-        plt.figure(1)
-        plt.plot(NodeList[1,:],NodeList[2,:],'*')
-        
-        GlobalStiffMat=assembleGlobalStiffMat(GlobalElementMatrix,NodeList)
+       
+        GlobalStiffMat,GlobalForceMat=assembleGlobalMats(GlobalElementMatrix,NodeList,order)
+        print('Global Stiffness and Force Matrix generated')
+
+        EleFluxMatx,EleFluxMaty,EleMassMat=assembleElementMats(GlobalElementMatrix,NodeList)
+
+
         BCnodes=np.array([*np.arange(0,2*N_row+1), 
                   *np.arange(1+2*N_row,1+2*N_row+(N_col)*(2+4*N_row),(2+4*N_row)),
                   *np.arange(2+4*N_row,2+4*N_row+(N_col)*(2+4*N_row),(2+4*N_row)),
@@ -157,7 +191,7 @@ def PreProc():
                   *np.arange(2*(N_row-1)+4+4*N_row,2*(N_row-1)+(N_col)*(2+4*N_row)+4+4*N_row,(2+4*N_row)),
                   *np.arange((N_col)*(2+4*N_row)-1,2*N_row+(N_col)*(2+4*N_row))
                   ])
-        return GlobalStiffMat,GlobalElementMatrix,NodeList,BCnodes
+        return GlobalStiffMat,GlobalForceMat,GlobalElementMatrix,NodeList,BCnodes,EleFluxMatx,EleFluxMaty,EleMassMat
     else: 
         return 0
     
@@ -192,6 +226,23 @@ def plotting(XY):
     
     Xp, Yp = np.meshgrid(xp, yp)
 
+    xp=np.linspace(-1,1)
+    yp=np.linspace(-1,1)
+    
+    Xp, Yp = np.meshgrid(xp, yp)
+
+    Jgrid=np.zeros((len(xp),len(xp)))
+    for i in range(len(Xp)):
+        for j in range(len(Yp)):
+            Jgrid[i,j]=detJ(Xp[i,j], Yp[i,j],XY)
+    
+    
+    plt.figure(4)
+    ax = plt.axes(projection='3d')
+    ax.plot_surface(Xp,Yp,Jgrid)
+    ax.plot_surface(Xp,Yp,np.zeros((len(xp),len(xp))))
+    
+    
 # =============================================================================
 #     ax = plt.axes(projection='3d')
 #     
@@ -236,21 +287,3 @@ def plotting(XY):
 #     ax.plot_surface(Xp,Yp,N1_2(Xp, Yp))
 #     
 # =============================================================================
-    xp=np.linspace(-1,1)
-    yp=np.linspace(-1,1)
-    
-    Xp, Yp = np.meshgrid(xp, yp)
-
-    Jgrid=np.zeros((len(xp),len(xp)))
-    for i in range(len(Xp)):
-        for j in range(len(Yp)):
-            Jgrid[i,j]=detJ(Xp[i,j], Yp[i,j],XY)
-    
-    
-    
-    
-    
-    plt.figure(4)
-    ax = plt.axes(projection='3d')
-    ax.plot_surface(Xp,Yp,Jgrid)
-    ax.plot_surface(Xp,Yp,np.zeros((len(xp),len(xp))))
