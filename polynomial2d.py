@@ -21,7 +21,7 @@ class poly:
             self.coefficients = coefficients
         for i in range(self.coefficients.shape[0]):
             for j in range(self.coefficients.shape[1]):
-                if abs(self.coefficients[i,j])<5e-16:
+                if abs(self.coefficients[i,j])<1e-16:
                     self.coefficients[i,j]=0
     def __repr__(self):
         """
@@ -160,6 +160,8 @@ class poly:
 # =============================================================================
 
         return res
+    
+    
     def __call__(self, x=None,y=None):    
         if isinstance(x,np.ndarray) and isinstance(y,np.ndarray):
             if x.any()!=None and y.any()!=None:
@@ -226,7 +228,7 @@ class poly:
     def __mul__(self,other):
         if isinstance(other, int) or isinstance(other, float):
             other=poly(other)
-        res=np.zeros((self.degreey()+other.degreey()-1,self.degreex()+other.degreex()-1),dtype=np.float64)
+        res=np.zeros((self.coefficients.shape[0]+other.degreey()-1,self.coefficients.shape[1]+other.degreex()-1),dtype=np.float64)
         for i in range(self.degreey()):
             for j in range(self.degreex()):
                 res[i:i+other.degreey(),j:j+other.degreex()]+=self.coefficients[i,j]*other.coefficients

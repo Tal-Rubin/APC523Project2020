@@ -35,3 +35,16 @@ def B(xi,eta):
     return np.array([[N1.dx()(xi,eta),N2.dx()(xi,eta),N3.dx()(xi,eta),N4.dx()(xi,eta),N5.dx()(xi,eta),N6.dx()(xi,eta),N7.dx()(xi,eta),N8.dx()(xi,eta),N9.dx()(xi,eta)],
                      [N1.dy()(xi,eta),N2.dy()(xi,eta),N3.dy()(xi,eta),N4.dy()(xi,eta),N5.dy()(xi,eta),N6.dy()(xi,eta),N7.dy()(xi,eta),N8.dy()(xi,eta),N9.dy()(xi,eta)]]).T
 
+M1 = p2d.poly([1])
+M2 = p2d.poly([0,1])
+M3 = p2d.poly([[0],[1]])
+M4 = M2*M3
+M5 = p2d.poly([-0.5,0,1.5])
+M6 = p2d.poly([[-0.5],[0],[1.5]])
+M7 = M2*M6
+M8 = M3*M5
+M9 = M5*M6
+
+Ma=np.array([M1,M2,M3,M4,M5,M6,M7,M8,M9])
+
+
