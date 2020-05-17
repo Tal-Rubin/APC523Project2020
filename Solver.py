@@ -264,10 +264,6 @@ ax.plot_trisurf(NodeList[1,:],NodeList[2,:],Phi,
                 cmap='viridis')
 
 
-diag=np.zeros((DGorder,DGorder))
-diag[0,0]=1
-
-
 
 FluxMat=np.zeros((GlobalElementMatrix.shape[0]*DGorder,GlobalElementMatrix.shape[0]*DGorder))
 for k in range(GlobalElementMatrix.shape[0]):
@@ -277,23 +273,23 @@ for k in range(GlobalElementMatrix.shape[0]):
             for m in range(DGorder):
                 FluxMat[DGorder*k+i,DGorder*k+j]+=EleFluxMatx[k,i,j,m]*vx[DGorder*k+m]+EleFluxMaty[k,i,j,m]*vy[DGorder*k+m]
                 
-                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_1x[k,i,j,m]*vx[DGorder*k+m]-b_mast_1y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
+                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_1x[k,i,j,m]*vx[DGorder*k+m]-b_mast_1y[k,i,j,m]*vy[DGorder*k+m])
                 
-                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_2x[k,i,j,m]*vx[DGorder*k+m]-b_mast_2y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
-                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_3x[k,i,j,m]*vx[DGorder*k+m]-b_mast_3y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
-                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_4x[k,i,j,m]*vx[DGorder*k+m]-b_mast_4y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
+                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_2x[k,i,j,m]*vx[DGorder*k+m]-b_mast_2y[k,i,j,m]*vy[DGorder*k+m])
+                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_3x[k,i,j,m]*vx[DGorder*k+m]-b_mast_3y[k,i,j,m]*vy[DGorder*k+m])
+                FluxMat[DGorder*k+i,DGorder*k+j]+=0.5*(b_mast_4x[k,i,j,m]*vx[DGorder*k+m]-b_mast_4y[k,i,j,m]*vy[DGorder*k+m])
                 
                 if Connectivity[k,0]!=-1:
-                    FluxMat[DGorder*Connectivity[k,0]+i,DGorder*k+j]-=0.5*(b_mast_3x[k,i,j,m]*vx[DGorder*k+m]-b_mast_3y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
+                    FluxMat[DGorder*Connectivity[k,0]+i,DGorder*k+j]-=0.5*(b_mast_3x[k,i,j,m]*vx[DGorder*k+m]-b_mast_3y[k,i,j,m]*vy[DGorder*k+m])
                         
                 if Connectivity[k,1]!=-1:
-                    FluxMat[DGorder*Connectivity[k,1]+i,DGorder*k+j]-=0.5*(b_mast_4x[k,i,j,m]*vx[DGorder*k+m]-b_mast_4y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
+                    FluxMat[DGorder*Connectivity[k,1]+i,DGorder*k+j]-=0.5*(b_mast_4x[k,i,j,m]*vx[DGorder*k+m]-b_mast_4y[k,i,j,m]*vy[DGorder*k+m])
                         
                 if Connectivity[k,2]!=-1:
-                    FluxMat[DGorder*Connectivity[k,2]+i,DGorder*k+j]-=0.5*(b_mast_1x[k,i,j,m]*vx[DGorder*k+m]-b_mast_1y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
+                    FluxMat[DGorder*Connectivity[k,2]+i,DGorder*k+j]-=0.5*(b_mast_1x[k,i,j,m]*vx[DGorder*k+m]-b_mast_1y[k,i,j,m]*vy[DGorder*k+m])
                 
                 if Connectivity[k,3]!=-1: 
-                    FluxMat[DGorder*Connectivity[k,3]+i,DGorder*k+j]-=0.5*(b_mast_2x[k,i,j,m]*vx[DGorder*k+m]-b_mast_2y[k,i,j,m]*vy[DGorder*k+m]+diag[i,j])
+                    FluxMat[DGorder*Connectivity[k,3]+i,DGorder*k+j]-=0.5*(b_mast_2x[k,i,j,m]*vx[DGorder*k+m]-b_mast_2y[k,i,j,m]*vy[DGorder*k+m])
 
                                            
 
