@@ -261,11 +261,12 @@ rho=projectFEintoDG(setInitDenDistFE(0,5,0.5,1,np.zeros(NodeList.shape[1]),NodeL
 
 #BC
 plt.figure(3)
+plt.title('FE boundary condition nodes')
 for i in BCnodes:
     GlobalStiffMat[i,:]=np.zeros((1,GlobalStiffMat.shape[1]))
     GlobalStiffMat[i,i]=1
 #   F[i]=0
-    plt.plot(NodeList[1,i],NodeList[2,i],'*')
+plt.plot(NodeList[1,BCnodes],NodeList[2,BCnodes],'*')
 rho0=rho
 
 #time loop
