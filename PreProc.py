@@ -152,6 +152,34 @@ def initMasterBoundMatrix(DGorder):
     return b_mast_1,b_mast_2,b_mast_3,b_mast_4
 
 
+def initMasterLaxFriedrichs(DGorder):   
+    LF_mast_1=np.zeros((9,DGorder))
+    LF_mast_2=np.zeros((9,DGorder))
+    LF_mast_3=np.zeros((9,DGorder))
+    LF_mast_4=np.zeros((9,DGorder))
+
+    for n in range(9):
+        for m in range(DGorder):
+            temp13=QBF.Na[n].dx()*QBF.Ma[m]
+            temp24=QBF.Na[n].dy()*QBF.Ma[m]
+
+            temp1=temp13(y=-1)
+            temp2=temp24(x=1)
+            temp3=temp13(y=1)
+            temp4=temp24(x=-1)
+
+            temp1=temp1.intx(-1,1)
+            temp2=temp2.inty(-1,1)
+            temp3=temp3.intx(-1,1)
+            temp4=temp4.inty(-1,1)
+            
+            LF_mast_1[n,m]=temp1.scalar()
+            LF_mast_2[n,m]=temp2.scalar()
+            LF_mast_3[n,m]=-temp3.scalar()
+            LF_mast_4[n,m]=-temp4.scalar()
+    return LF_mast_1,LF_mast_2,LF_mast_3,LF_mast_4
+
+
 
 def assembleGlobalMats(GlobalElementMatrix,NodeList,order=6):
    # k_mast=initMasterStiffnessMat()
@@ -193,13 +221,12 @@ def assembleElementMats(GlobalElementMatrix,NodeList,DGorder):
     Gamma_mast=initMasterFluxMat(DGorder)
     Mass_mast=initMasterMassMatrix(DGorder)
     b_mast_1,b_mast_2,b_mast_3,b_mast_4=initMasterBoundMatrix(DGorder)
-
+    LF_mast_1,LF_mast_2,LF_mast_3,LF_mast_4=initMasterLaxFriedrichs(DGorder)
+    
     EleFluxMatx=np.zeros((GlobalElementMatrix.shape[0],DGorder,DGorder,DGorder))
     EleFluxMaty=np.zeros((GlobalElementMatrix.shape[0],DGorder,DGorder,DGorder))
     InvMassMat=np.zeros((GlobalElementMatrix.shape[0]*DGorder,GlobalElementMatrix.shape[0]*DGorder))
-
-
-
+    
     b_mast_1x=np.zeros((GlobalElementMatrix.shape[0],DGorder,DGorder,DGorder))
     b_mast_1y=np.zeros((GlobalElementMatrix.shape[0],DGorder,DGorder,DGorder))
 
@@ -211,6 +238,19 @@ def assembleElementMats(GlobalElementMatrix,NodeList,DGorder):
     
     b_mast_4x=np.zeros((GlobalElementMatrix.shape[0],DGorder,DGorder,DGorder))
     b_mast_4y=np.zeros((GlobalElementMatrix.shape[0],DGorder,DGorder,DGorder))
+    
+    
+    LF_mast_1x=np.zeros((GlobalElementMatrix.shape[0],DGorder))
+    LF_mast_1y=np.zeros((GlobalElementMatrix.shape[0],DGorder))
+
+    LF_mast_2x=np.zeros((GlobalElementMatrix.shape[0],DGorder))
+    LF_mast_2y=np.zeros((GlobalElementMatrix.shape[0],DGorder))
+    
+    LF_mast_3x=np.zeros((GlobalElementMatrix.shape[0],DGorder))
+    LF_mast_3y=np.zeros((GlobalElementMatrix.shape[0],DGorder))
+    
+    LF_mast_4x=np.zeros((GlobalElementMatrix.shape[0],DGorder))
+    LF_mast_4y=np.zeros((GlobalElementMatrix.shape[0],DGorder))
 
     for k in range(GlobalElementMatrix.shape[0]):
         XYele = NodeList[1:3,GlobalElementMatrix[k,1:10]]      
@@ -218,11 +258,10 @@ def assembleElementMats(GlobalElementMatrix,NodeList,DGorder):
    
         for n in range(9):
             for m in range(9):
-    
-                InvMassMat[DGorder*k:DGorder*(k+1),DGorder*k:DGorder*(k+1)]+=Mass_mast[:,:,n,m]*NodeXYantySymOuter[n,m]
+                    InvMassMat[DGorder*k:DGorder*(k+1),DGorder*k:DGorder*(k+1)]+=Mass_mast[:,:,n,m]*NodeXYantySymOuter[n,m]
             
             EleFluxMatx[k,:,:,:]+=Gamma_mast[:,:,n,:]*NodeList[2,GlobalElementMatrix[k,n+1]]
-            EleFluxMaty[k,:,:,:]+=-Gamma_mast[:,:,n,:]*NodeList[1,GlobalElementMatrix[k,n+1]]
+            EleFluxMaty[k,:,:,:]-=Gamma_mast[:,:,n,:]*NodeList[1,GlobalElementMatrix[k,n+1]]
             
             b_mast_1x[k,:,:,:]+=b_mast_1[:,:,n,:]*NodeList[2,GlobalElementMatrix[k,1+n]]
             b_mast_1y[k,:,:,:]+=b_mast_1[:,:,n,:]*NodeList[1,GlobalElementMatrix[k,1+n]]
@@ -235,9 +274,37 @@ def assembleElementMats(GlobalElementMatrix,NodeList,DGorder):
     
             b_mast_4x[k,:,:,:]+=b_mast_4[:,:,n,:]*NodeList[2,GlobalElementMatrix[k,1+n]]
             b_mast_4y[k,:,:,:]+=b_mast_4[:,:,n,:]*NodeList[1,GlobalElementMatrix[k,1+n]]
-        InvMassMat[DGorder*k:DGorder*(k+1),DGorder*k:DGorder*(k+1)]=np.linalg.inv(InvMassMat[DGorder*k:DGorder*(k+1),DGorder*k:DGorder*(k+1)])
-    return EleFluxMatx,EleFluxMaty,InvMassMat,b_mast_1x,b_mast_1y,b_mast_2x,b_mast_2y,b_mast_3x,b_mast_3y,b_mast_4x,b_mast_4y
+            
+            LF_mast_1x[k,:]+=LF_mast_1[n,:]*NodeList[2,GlobalElementMatrix[k,1+n]]
+            LF_mast_1y[k,:]+=LF_mast_1[n,:]*NodeList[1,GlobalElementMatrix[k,1+n]]
 
+            LF_mast_2x[k,:]+=LF_mast_2[n,:]*NodeList[2,GlobalElementMatrix[k,1+n]]
+            LF_mast_2y[k,:]+=LF_mast_2[n,:]*NodeList[1,GlobalElementMatrix[k,1+n]]
+    
+            LF_mast_3x[k,:]+=LF_mast_3[n,:]*NodeList[2,GlobalElementMatrix[k,1+n]]
+            LF_mast_3y[k,:]+=LF_mast_3[n,:]*NodeList[1,GlobalElementMatrix[k,1+n]]
+        
+            LF_mast_4x[k,:]+=LF_mast_4[n,:]*NodeList[2,GlobalElementMatrix[k,1+n]]
+            LF_mast_4y[k,:]+=LF_mast_4[n,:]*NodeList[1,GlobalElementMatrix[k,1+n]]
+            
+            
+        InvMassMat[DGorder*k:DGorder*(k+1),DGorder*k:DGorder*(k+1)]=np.linalg.inv(InvMassMat[DGorder*k:DGorder*(k+1),DGorder*k:DGorder*(k+1)])
+    return EleFluxMatx,EleFluxMaty,InvMassMat,b_mast_1x,b_mast_1y,b_mast_2x,b_mast_2y,b_mast_3x,b_mast_3y,b_mast_4x,b_mast_4y,LF_mast_1x,LF_mast_1y,LF_mast_2x,LF_mast_2y,LF_mast_3x,LF_mast_3y,LF_mast_4x,LF_mast_4y
+
+
+def calcEleDims(GlobalElementMatrix,NodeList):
+    EleDims=np.zeros(GlobalElementMatrix.shape[0]) #area, arc lengths
+    for k in range(GlobalElementMatrix.shape[0]):
+        XYele = NodeList[1:3,GlobalElementMatrix[k,1:10]]      
+        NodeXYantySymOuter=np.outer(XYele[0,:],XYele[1,:])-np.outer(XYele[1,:],XYele[0,:])
+        temp0=0
+        for n in range(9):
+            for m in range(9):
+                temp0+=(QBF.Na[n].dx()*QBF.Na[m].dy())*NodeXYantySymOuter[n,m]
+        temp0=temp0.intx(-1,1)
+        temp0=temp0.inty(-1,1)
+        EleDims[k]=temp0.scalar()
+    return EleDims
 
     #PreProcessor
 def PreProc(XY,N_row=10,N_col=10,DGorder=3,Qorder=6,ElemBeginNum=0,NodeBeginNum=0):
@@ -255,8 +322,9 @@ def PreProc(XY,N_row=10,N_col=10,DGorder=3,Qorder=6,ElemBeginNum=0,NodeBeginNum=
         GlobalStiffMat,GlobalForceMat=assembleGlobalMats(GlobalElementMatrix,NodeList,Qorder)
         print('Global Stiffness and Force Matrix generated')
 
-        EleFluxMatx,EleFluxMaty,InvMassMat,b_mast_1x,b_mast_1y,b_mast_2x,b_mast_2y,b_mast_3x,b_mast_3y,b_mast_4x,b_mast_4y=assembleElementMats(GlobalElementMatrix,NodeList,DGorder)
-
+        EleFluxMatx,EleFluxMaty,InvMassMat,b_mast_1x,b_mast_1y,b_mast_2x,b_mast_2y,b_mast_3x,b_mast_3y,b_mast_4x,b_mast_4y,LF_mast_1x,LF_mast_1y,LF_mast_2x,LF_mast_2y,LF_mast_3x,LF_mast_3y,LF_mast_4x,LF_mast_4y=assembleElementMats(GlobalElementMatrix,NodeList,DGorder)
+        
+        EleVol=calcEleDims(GlobalElementMatrix,NodeList)
 
         BCnodes=np.array([*np.arange(0,2*N_row+1), 
                   *np.arange(1+2*N_row,1+2*N_row+(N_col)*(2+4*N_row),(2+4*N_row)),
@@ -265,7 +333,7 @@ def PreProc(XY,N_row=10,N_col=10,DGorder=3,Qorder=6,ElemBeginNum=0,NodeBeginNum=
                   *np.arange(2*(N_row-1)+4+4*N_row,2*(N_row-1)+(N_col)*(2+4*N_row)+4+4*N_row,(2+4*N_row)),
                   *np.arange((N_col)*(2+4*N_row)-1,2*N_row+(N_col)*(2+4*N_row))
                   ])
-        return GlobalStiffMat,GlobalForceMat,GlobalElementMatrix,NodeList,BCnodes,EleFluxMatx,EleFluxMaty,InvMassMat,b_mast_1x,b_mast_1y,b_mast_2x,b_mast_2y,b_mast_3x,b_mast_3y,b_mast_4x,b_mast_4y,Connectivity
+        return GlobalStiffMat,GlobalForceMat,GlobalElementMatrix,NodeList,BCnodes,EleFluxMatx,EleFluxMaty,InvMassMat,b_mast_1x,b_mast_1y,b_mast_2x,b_mast_2y,b_mast_3x,b_mast_3y,b_mast_4x,b_mast_4y,LF_mast_1x,LF_mast_1y,LF_mast_2x,LF_mast_2y,LF_mast_3x,LF_mast_3y,LF_mast_4x,LF_mast_4y,Connectivity,EleVol
     else: 
         return 0
     
