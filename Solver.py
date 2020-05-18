@@ -85,13 +85,12 @@ def setInitDenDist(x0,y0,r0,denval,rho,NodeList,GlobalElementMatrix,DGorder):
         #rho[9*k]+=1
     return rho,plt.Circle((x0,y0), r0, color='r')
 
-
 def setInitDenDistFE(x0,y0,r0,denval,rho,NodeList,GlobalElementMatrix):
     for k in range(NodeList.shape[1]):
         dist=(NodeList[1,k]-x0)**2+(NodeList[2,k]-y0)**2
-        if dist<r0**2:
-            rho[k]+=denval
+        rho[k]+=denval*np.exp(-dist*r0)
     return rho
+
 
 def sumcellav(rho,GlobalElementMatrix,DGorder):
     s=0
@@ -240,7 +239,7 @@ rho0=rho
 
 DT=0.001
 #time loop
-rhoFE=projectDGintoFE(rho0,NodeList,GlobalElementMatrix,Proj,DGorder)    
+rhoFE=setInitDenDistFE(0,5,0.5,1,np.zeros(NodeList.shape[1])
 
 #rhoFE=setInitDenDistFE(2,6.5,0.8,1,np.zeros(NodeList.shape[1]),NodeList,GlobalElementMatrix)
 #rhoFE=setInitDenDistFE(-2,6.5,0.8,-1,rhoFE,NodeList,GlobalElementMatrix)
