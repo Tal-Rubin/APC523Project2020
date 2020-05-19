@@ -45,7 +45,7 @@ def PoissonSol(x,y):
 
 def plotFEelem(Phi,GlobalElementMatrix,NodeList,fignum,res=5):   
     xp=np.linspace(-1,1,res)
-    yp=np.linspace(-1,.1,res)
+    yp=np.linspace(-1,1,res)
     
     Xnode=np.array([])
     Ynode=np.array([])
