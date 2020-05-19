@@ -44,8 +44,8 @@ def PoissonSol(x,y):
     return res
 
 def plotFEelem(Phi,GlobalElementMatrix,NodeList,fignum,res=5):   
-    xp=np.linspace(-.95,.95,res)
-    yp=np.linspace(-.95,.95,res)
+    xp=np.linspace(-1,1,res)
+    yp=np.linspace(-1,.1,res)
     
     Xnode=np.array([])
     Ynode=np.array([])
@@ -53,21 +53,14 @@ def plotFEelem(Phi,GlobalElementMatrix,NodeList,fignum,res=5):
     for k in range(GlobalElementMatrix.shape[0]):
         for i in range(len(xp)):
             for j in range(len(yp)):
-                
                 phinode=np.append(phinode,(Phi[GlobalElementMatrix[k,1:10]]@QBF.Na)(xp[i],yp[j]))
                 Xnode=np.append(Xnode,(NodeList[1,GlobalElementMatrix[k,1:10]]@QBF.Na)(xp[i],yp[j]))
                 Ynode=np.append(Ynode,(NodeList[2,GlobalElementMatrix[k,1:10]]@QBF.Na)(xp[i],yp[j]))
 
-# =============================================================================
-#     for i in range(len(Xp)):
-#         for j in range(len(Yp)):
-#             Jgrid[i,j]=detJ(Xp[i,j], Yp[i,j],XY)
-#     
-# =============================================================================
-    
+   
     plt.figure(fignum)
     ax = plt.axes(projection='3d')
-    ax.plot_trisurf(Xnode,Ynode,rhonode,
+    ax.plot_trisurf(Xnode,Ynode,phinode,
                 cmap='viridis')
 
 XDom=2
@@ -84,9 +77,9 @@ N_col=100
 L2norm=np.zeros((20,20))
 
 for N_row in range(1,21):
-    for N_col in range(1,21):
+    for N_col in range(N_row,21):
+ 
         GlobalElementMatrix,NodeList,Connectivity=PreProc.NodeArrange(N_row,N_col,XY,0,0)
-        
         
         GlobalStiffMat,GlobalForceMat=PreProc.assembleGlobalMats(GlobalElementMatrix,NodeList,5)
         
@@ -137,6 +130,8 @@ for N_row in range(1,21):
 # =============================================================================
         
         L2norm[N_row-1,N_col-1]=(evalErrorFE(PoissonSol,Phi,NodeList,GlobalElementMatrix,6))
+        L2norm[N_col-1,N_row-1]=L2norm[N_row-1,N_col-1]
+        print(str(N_row) + ' ' +str(N_col))
 
 xp=np.arange(1,21)
 yp=np.arange(1,21)
@@ -146,3 +141,15 @@ plt.figure(3)
 ax = plt.axes(projection='3d')
 ax.plot_surface(Xp,Yp,L2norm,
          cmap='viridis')
+
+
+plt.figure(4)
+for i in range(7):
+    plt.semilogy(np.arange(1,21),L2norm[i,:],'.-',label=str(i+1)+' column elements')
+plt.title('L2 norm of error')
+plt.xlabel('number of row elements')
+plt.ylabel('error')
+
+plt.legend()
+plt.xlim(1,20)
+plt.xticks(np.arange(1,21))
