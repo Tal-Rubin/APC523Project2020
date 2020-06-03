@@ -140,6 +140,36 @@ def TorX(N_row,Connectivity):
         Connectivity[N_row*(N_col-1)+k,1]=k
     return Connectivity
 
+def evalErrorFE(f,Phi,NodeList,GlobalElementMatrix,order):
+    x_i=np.array([-0.932469514203152,-0.661209386466265,-0.238619186083197,0.238619186083197,0.661209386466265,0.932469514203152])
+    w_i=np.array([0.171324492379170,0.360761573048139,0.467913934572691,0.467913934572691,0.360761573048139,0.171324492379170])
+    if order==5:
+        x_i=np.array([-np.sqrt(5+2*np.sqrt(10/7))/3,-np.sqrt(5-2*np.sqrt(10/7))/3,0,np.sqrt(5-2*np.sqrt(10/7))/3,np.sqrt(5+2*np.sqrt(10/7))/3])
+        w_i=np.array([(322-13*np.sqrt(70))/900,(322+13*np.sqrt(70))/900,128/225,(322+13*np.sqrt(70))/900,(322-13*np.sqrt(70))/900])        
+    L2Err=0
+    for k in range(GlobalElementMatrix.shape[0]):
+        XYele = NodeList[1:3,GlobalElementMatrix[k,1:10]]      
+        x=NodeList[1,GlobalElementMatrix[k,1:10]]@QBF.Na
+        y=NodeList[2,GlobalElementMatrix[k,1:10]]@QBF.Na
+        
+        for n in range(len(x_i)):
+            for m in range(len(x_i)):
+                x1=x(x_i[n],x_i[m])
+                y1=y(x_i[n],x_i[m])
+
+                L2Err+=w_i[n]*w_i[m]*(f(x1,y1)-(Phi[GlobalElementMatrix[k,1:10]]@QBF.Na)(x_i[n],x_i[m]))**2*PreProc.detJ(x_i[n],x_i[m], XYele)
+
+    return np.sqrt(L2Err)
+
+
+def PoissonSol(x,y):
+    res=(1-x**2)/2
+    for k in range(1,100,2):
+        res-=16*np.pi**(-3)*(np.sin(k*np.pi*(1+x)/2)*k**(-3)/np.sinh(k*np.pi))*(np.sinh(k*np.pi*(1+y)/2)+np.sinh(k*np.pi*(1-y)/2))
+    return res
+
+
+
 
 new_mesh=True
 save_mesh=False
@@ -226,6 +256,9 @@ for i in range(GlobalElementMatrix.shape[0]):
 
 
 rho=projectFEintoDG(setInitDenDistFE(0,5,0.5,1,np.zeros(NodeList.shape[1]),NodeList,GlobalElementMatrix),NodeList,GlobalElementMatrix,DGorder)
+
+
+
 # =============================================================================
 # for i in range(rho.shape[0]):
 #     for j in range(rho.shape[1]-1):
@@ -259,41 +292,46 @@ rho=projectFEintoDG(setInitDenDistFE(0,5,0.5,1,np.zeros(NodeList.shape[1]),NodeL
 
 
 
-#BC
-plt.figure(3)
-plt.title('FE boundary condition nodes')
-for i in BCnodes:
-    GlobalStiffMat[i,:]=np.zeros((1,GlobalStiffMat.shape[1]))
-    GlobalStiffMat[i,i]=1
-#   F[i]=0
-plt.plot(NodeList[1,BCnodes],NodeList[2,BCnodes],'*')
+# =============================================================================
+# plt.figure(3)
+# plt.title('FE boundary condition nodes')
+# plt.plot(NodeList[1,BCnodes],NodeList[2,BCnodes],'*')
+# =============================================================================
 rho0=rho
 
 #time loop
 rhoFE=setInitDenDistFE(0,5,0.5,1,np.zeros(NodeList.shape[1]),NodeList,GlobalElementMatrix)
 
+
+
 #rhoFE=setInitDenDistFE(2,6.5,0.8,1,np.zeros(NodeList.shape[1]),NodeList,GlobalElementMatrix)
 #rhoFE=setInitDenDistFE(-2,6.5,0.8,-1,rhoFE,NodeList,GlobalElementMatrix)
 
 F=chargeOverPermitt*GlobalForceMat@rhoFE
-F[BCnodes]=0 #BC
+
+#BC
+F[BCnodes]=0 
+GlobalStiffMat[BCnodes,:]=np.zeros((1,GlobalStiffMat.shape[1]))
+GlobalStiffMat[BCnodes,BCnodes]=1
+
 
 Phi=np.linalg.solve(GlobalStiffMat,F)
-
-plt.figure(4)
-ax = plt.axes(projection='3d')
-ax.plot_trisurf(NodeList[1,:],NodeList[2,:],rhoFE,
-                cmap='viridis')
-
-
-
-
-plt.figure(2)
-ax = plt.axes(projection='3d')
-ax.plot_trisurf(NodeList[1,:],NodeList[2,:],Phi,
-                cmap='viridis')
-
-
+# =============================================================================
+# 
+# plt.figure(4)
+# ax = plt.axes(projection='3d')
+# ax.plot_trisurf(NodeList[1,:],NodeList[2,:],rhoFE,
+#                 cmap='viridis')
+# 
+# 
+# 
+# 
+# plt.figure(2)
+# ax = plt.axes(projection='3d')
+# ax.plot_trisurf(NodeList[1,:],NodeList[2,:],Phi,
+#                 cmap='viridis')
+# 
+# =============================================================================
 
 
 
@@ -345,45 +383,79 @@ for k in range(GlobalElementMatrix.shape[0]):
     alpha3=abs(alpha3)        
     alpha4=abs(alpha4)      
     
-    FluxMat3[DGorder*k,DGorder*k]+=0.5*(alpha1)
-    FluxMat3[DGorder*k,DGorder*k]+=0.5*(alpha2)
-    FluxMat3[DGorder*k,DGorder*k]+=0.5*(alpha3)
-    FluxMat3[DGorder*k,DGorder*k]+=0.5*(alpha4)
+    FluxMat3[DGorder*k,DGorder*k]-=0.5*(alpha1)
+    FluxMat3[DGorder*k,DGorder*k]-=0.5*(alpha2)
+    FluxMat3[DGorder*k,DGorder*k]-=0.5*(alpha3)
+    FluxMat3[DGorder*k,DGorder*k]-=0.5*(alpha4)
             
 
 
             
     if Connectivity[k,0]!=-1:
-        FluxMat3[DGorder*Connectivity[k,0],DGorder*k]-=0.5*(alpha3)
+        FluxMat3[DGorder*Connectivity[k,0],DGorder*k]+=0.5*(alpha3)
         
     if Connectivity[k,1]!=-1:
-        FluxMat3[DGorder*Connectivity[k,1],DGorder*k]-=0.5*(alpha4)
+        FluxMat3[DGorder*Connectivity[k,1],DGorder*k]+=0.5*(alpha4)
         
     if Connectivity[k,2]!=-1:
-        FluxMat3[DGorder*Connectivity[k,2],DGorder*k]-=0.5*(alpha1)
+        FluxMat3[DGorder*Connectivity[k,2],DGorder*k]+=0.5*(alpha1)
             
     if Connectivity[k,3]!=-1: 
-        FluxMat3[DGorder*Connectivity[k,3],DGorder*k]-=0.5*(alpha2)
+        FluxMat3[DGorder*Connectivity[k,3],DGorder*k]+=0.5*(alpha2)
                                             
-plt.figure(15)
-plt.imshow(FluxMat1)
-
-plt.figure(16)
-plt.imshow(FluxMat2)
-
-plt.figure(17)
-plt.imshow(FluxMat3)
+# =============================================================================
+# plt.figure(15)
+# plt.imshow(FluxMat1)
+# 
+# plt.figure(16)
+# plt.imshow(FluxMat2)
+# 
+# plt.figure(17)
+# plt.imshow(FluxMat3)
+# =============================================================================
 
 FluxMat=FluxMat1+FluxMat2+FluxMat3
 
 plt.figure(18)
 plt.imshow(FluxMat)
 
+rho=rho0
+plotDGelem(rho0, GlobalElementMatrix, NodeList, 0, DGorder,3)
 
 DT=0.1
+time=0
+while time<XDom:
+    time+=DT
+    CFL=DT*np.maximum(FluxMat,0)@np.ones(rho.shape)/EleVol
+    rho_f1=np.maximum(np.minimum(rho,rho/(2*CFL)),0)
+    
+    rho1=rho+DT*InvMassMat@(FluxMat@rho)
+    rho1=FluxLimit(rho1,DGorder) 
+    
+    rho_f2=np.maximum(np.minimum(rho1,rho1/(2*CFL)),0)
+   
+    rho2=0.75*rho+0.25*rho1+0.25*DT*InvMassMat@(FluxMat@rho1)
+    rho2=FluxLimit(rho2,DGorder)
 
-for i in range(100):
+    rho_f3=np.maximum(np.minimum(rho2,rho2/(2*CFL)),0)
 
+    rho3=1/3*rho+2/3*rho2+2/3*DT*InvMassMat@(FluxMat@rho2)
+    rho3=FluxLimit(rho3,DGorder)
+
+# =============================================================================
+#     for k in range(GlobalElementMatrix.shape[0]):
+#         if Connectivity[k,1]==-1 or Connectivity[k,3]==-1 or Connectivity[k,0]==-1 or Connectivity[k,2]==-1:
+#             rho3[DGorder*k:DGorder*(k+1)]=rho0[DGorder*k:DGorder*(k+1)]
+# =============================================================================        
+    rho=rho3
+    
+rhoRD1=rho   
+plotDGelem(rhoRD1, GlobalElementMatrix, NodeList, 1, DGorder,3)    
+    
+    
+    
+while time<2*XDom:
+    time+=DT
     CFL=DT*np.maximum(FluxMat,0)@np.ones(rho.shape)/EleVol
     rho_f1=np.maximum(np.minimum(rho,rho/(4*CFL)),0)
     
@@ -391,39 +463,53 @@ for i in range(100):
     rho1=FluxLimit(rho1,DGorder) 
     
     rho_f2=np.maximum(np.minimum(rho1,rho1/(4*CFL)),0)
-    
-    
+   
     rho2=0.75*rho+0.25*rho1+0.25*DT*InvMassMat@(FluxMat@rho_f2)
     rho2=FluxLimit(rho2,DGorder)
 
     rho_f3=np.maximum(np.minimum(rho2,rho2/(4*CFL)),0)
 
+    rho3=1/3*rho+2/3*rho2+2/3*DT*InvMassMat@(FluxMat@rho_f3)
+    rho3=FluxLimit(rho3,DGorder)      
+    rho=rho3
+
+rhoRD2=rho
+plotDGelem(rhoRD2, GlobalElementMatrix, NodeList, 2, DGorder,3)
+
+while time<3*XDom:
+    time+=DT
+    CFL=DT*np.maximum(FluxMat,0)@np.ones(rho.shape)/EleVol
+    rho_f1=np.maximum(np.minimum(rho,rho/(4*CFL)),0)
+    
+    rho1=rho+DT*InvMassMat@(FluxMat@rho_f1)
+    rho1=FluxLimit(rho1,DGorder) 
+    
+    rho_f2=np.maximum(np.minimum(rho1,rho1/(4*CFL)),0)
+   
+    rho2=0.75*rho+0.25*rho1+0.25*DT*InvMassMat@(FluxMat@rho_f2)
+    rho2=FluxLimit(rho2,DGorder)
+
+    rho_f3=np.maximum(np.minimum(rho2,rho2/(4*CFL)),0)
 
     rho3=1/3*rho+2/3*rho2+2/3*DT*InvMassMat@(FluxMat@rho_f3)
     rho3=FluxLimit(rho3,DGorder)
-
-
-# =============================================================================
-#     for k in range(GlobalElementMatrix.shape[0]):
-#         if Connectivity[k,1]==-1 or Connectivity[k,3]==-1 or Connectivity[k,0]==-1 or Connectivity[k,2]==-1:
-#             rho3[DGorder*k:DGorder*(k+1)]=rho0[DGorder*k:DGorder*(k+1)]
-# =============================================================================
-            
+  
     rho=rho3
-
-
+    
+rhoRD3=rho
+plotDGelem(rhoRD3, GlobalElementMatrix, NodeList, 3, DGorder,3)
 
 
 ########   How to deal with corners? in regular grid with v=(1,1) element 1,1 wouldnt get the right signal
-
 #plt.imshow(GlobalStiffMat)
-
-plotDGelem(rho, GlobalElementMatrix, NodeList, 5, DGorder,3)
-plotDGelem(rho0, GlobalElementMatrix, NodeList, 6, DGorder,3)
-
+# =============================================================================
+# 
+# plotDGelem(rho, GlobalElementMatrix, NodeList, 5, DGorder,3)
+# plotDGelem(rho0, GlobalElementMatrix, NodeList, 6, DGorder,3)
+# 
+# =============================================================================
 #200 timesteps
+
+
+
 print('rho0 = ' +str(sumcellav(rho0,GlobalElementMatrix,DGorder))+'\nrho = ' +str(sumcellav(rho,GlobalElementMatrix,DGorder))+' \nDelta = '+str(sumcellav(rho0,GlobalElementMatrix,DGorder)-sumcellav(rho,GlobalElementMatrix,DGorder)))
-
-
-
-
