@@ -422,7 +422,7 @@ plt.imshow(FluxMat)
 rho=rho0
 plotDGelem(rho0, GlobalElementMatrix, NodeList, 0, DGorder,3)
 
-DT=0.1
+DT=0.001
 time=0
 while time<XDom:
     time+=DT
