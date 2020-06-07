@@ -68,7 +68,7 @@ def PostProc(header='Den',DGorder=1):
     rho=rho.reshape(len(times),-1)
     
     x,y,z=initPlotDGelem(rho,GlobalElementMatrix,NodeList,DGorder)
-    
+    print('Minimum density = '+str(z.min()))
     
     fps = 10 # frame per sec
     frn = len(times) 
@@ -79,9 +79,9 @@ def PostProc(header='Den',DGorder=1):
     ax.set_zlim(0,1)
     ani=animation.FuncAnimation(fig, update_plot, frn, fargs=(z, plot,x,y,fig,ax), interval=1000/fps)
     
-    fn = 'plot_surface_animation_funcanimation'
+    fn = 'Density animation'
     #ani.save(fn+'.mp4',writer='ffmpeg',fps=fps)
-    ani.save(fn+'.gif',fps=fps)
+    ani.save(fn+'.gif',writer='imagemagick',fps=fps)
     
     
     #return rho, times
